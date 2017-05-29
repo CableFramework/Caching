@@ -65,6 +65,12 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
 
     /**
+     * @var string
+     */
+    private static $defaultCompressor = 'gz';
+
+
+    /**
      * Cache constructor.
      * @param ContainerInterface $container
      * @param array $configs
@@ -156,9 +162,12 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
             unset($configs['drivers']);
         }
 
-        if (isset($configs['compress'])) {
-            $this->compress = $configs['compress'];
-            unset($configs['compress']);
+        if (isset($configs['compress']['status'])) {
+            $this->compress = $configs['compress']['status'];
+        }
+
+        if (isset($configs['compress']['default'])) {
+            static::$defaultCompressor = $configs['compress']['default'];
         }
 
 
