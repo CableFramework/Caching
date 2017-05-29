@@ -1,5 +1,5 @@
 <?php
-namespace Cable\Components\Caching\Exceptions;
+namespace Cable\Caching\Exceptions;
 use Exception;
 
 class DriverNotFlushableException extends Exception

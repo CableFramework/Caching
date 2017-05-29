@@ -1,6 +1,6 @@
 <?php
 
-namespace Cable\Components\Caching\Driver;
+namespace Cable\Caching\Driver;
 
 /**
  * interface DriverAbstraction

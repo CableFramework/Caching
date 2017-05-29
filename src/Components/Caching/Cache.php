@@ -1,13 +1,13 @@
 <?php
 
-namespace Cable\Components\Caching;
+namespace Cable\Caching;
 
 
-use Cable\Components\Caching\Compressor\BootableCompressorInterface;
-use Cable\Components\Caching\Driver\DriverInterface;
-use Cable\Components\Caching\Driver\FlushableDriverInterface;
-use Cable\Components\Caching\Driver\TimeableDriverInterface;
-use Cable\Components\Caching\Exceptions\DriverNotFlushableException;
+use Cable\Caching\Compressor\BootableCompressorInterface;
+use Cable\Caching\Driver\DriverInterface;
+use Cable\Caching\Driver\FlushableDriverInterface;
+use Cable\Caching\Driver\TimeableDriverInterface;
+use Cable\Caching\Exceptions\DriverNotFlushableException;
 use Cable\Container\ContainerInterface;
 use Cable\Container\ExpectationException;
 use Cable\Container\NotFoundException;

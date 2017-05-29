@@ -1,5 +1,5 @@
 <?php
-namespace Cable\Components\Caching\Compressor;
+namespace Cable\Caching\Compressor;
 
 
 interface BootableCompressorInterface extends CompressorInterface

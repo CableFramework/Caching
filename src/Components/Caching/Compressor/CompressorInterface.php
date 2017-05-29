@@ -1,6 +1,6 @@
 <?php
 
-namespace Cable\Components\Caching\Compressor;
+namespace Cable\Caching\Compressor;
 
 /**
  * Interface CompressorInterface
