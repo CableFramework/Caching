@@ -14,9 +14,15 @@ class Cache
     private $container;
 
 
+    /**
+     * @var array
+     */
     protected $drivers = [
 
     ];
+
+
+    protected $comprosser;
 
     /**
      * @var array
