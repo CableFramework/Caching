@@ -1,5 +1,5 @@
 <?php
-namespace Cable\Components\Caching;
+namespace Cable\Components\Caching\Driver;
 
 
 interface BootableDriverInterface
