@@ -3,6 +3,7 @@
 namespace Cable\Components\Caching;
 
 
+use Cable\Components\Caching\Compressor\CompressorInterface;
 use Cable\Container\ContainerInterface;
 
 class Cache
@@ -17,12 +18,17 @@ class Cache
     /**
      * @var array
      */
-    protected $drivers = [
+    private $drivers = [
 
     ];
 
 
-    protected $comprosser;
+    private $compress = true;
+
+    /**
+     * @var CompressorInterface
+     */
+    private $compressor;
 
     /**
      * @var array
@@ -47,6 +53,35 @@ class Cache
     }
 
     /**
+     * @return CompressorInterface
+     */
+    public function getCompressor()
+    {
+        if (null === $this->compressor) {
+            $this->setComprossor(
+                $this->resolveCompressor()
+            );
+        }
+
+        return $this->compressor;
+    }
+
+    private function resolveCompressor(){
+        return $this->container->resolve('Cable\Components\Caching\Compressor\CompressorInterface');
+    }
+
+    /**
+     * @param CompressorInterface $compressor
+     * @return Cache
+     */
+    public function setCompressor(CompressorInterface $compressor)
+    {
+        $this->compressor = $compressor;
+
+        return $this;
+    }
+
+    /**
      * @param array $configs
      * @return void returns nothings
      */
@@ -62,7 +97,14 @@ class Cache
             unset($configs['drivers']);
         }
 
+        if (isset($configs['compress'])) {
+            $this->compress = $configs['compress'];
+            unset($configs['compress']);
+        }
+
+
         $this->configs = $configs;
     }
+
 
 }

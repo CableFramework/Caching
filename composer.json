@@ -1,0 +1,21 @@
+{
+    "name": "cable/cable-caching",
+    "description": "Caching library for Cable Framework",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "anonymframework",
+            "email": "vahit.serif119@gmail.com"
+        }
+    ],
+    "autoload":{
+      "psr-4": {
+          "Cable\\Caching\\" : "src/Components/Caching"
+      }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "cable/cable-container": "1.0.4"
+    }
+}
