@@ -16,6 +16,6 @@
     },
     "minimum-stability": "stable",
     "require": {
-        "cable/cable-container": "1.0.4"
+        "cable/cable-container": "1.0.5"
     }
 }
