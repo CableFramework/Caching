@@ -3,10 +3,10 @@
 namespace Cable\Components\Caching\Driver;
 
 /**
- * Class DriverAbstraction
+ * interface DriverAbstraction
  * @package Cable\Components\Caching\Driver
  */
-abstract class DriverAbstraction
+interface DriverInterface
 {
 
     /**
@@ -14,12 +14,12 @@ abstract class DriverAbstraction
      * @param null $default
      * @return mixed
      */
-    abstract public function get($name, $default = null);
+    public function get($name, $default = null);
 
     /**
      * @param string $name
      * @return mixed
      */
-    abstract public function delete($name);
+    public function delete($name);
 
 }
