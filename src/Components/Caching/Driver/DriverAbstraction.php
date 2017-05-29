@@ -2,7 +2,10 @@
 
 namespace Cable\Components\Caching\Driver;
 
-
+/**
+ * Class DriverAbstraction
+ * @package Cable\Components\Caching\Driver
+ */
 abstract class DriverAbstraction
 {
 
