@@ -4,6 +4,7 @@ namespace Cable\Caching;
 
 
 use Cable\Caching\Compressor\BootableCompressorInterface;
+use Cable\Caching\Compressor\CompressorInterface;
 use Cable\Caching\Driver\DriverInterface;
 use Cable\Caching\Driver\FlushableDriverInterface;
 use Cable\Caching\Driver\TimeableDriverInterface;
@@ -46,12 +47,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @var string
      */
-    private static $compressorInterface = '\Cable\Components\Caching\Compressor\BootableCompressorInterface';
-
-    /**
-     * @var string
-     */
-    private static $compressorContainer = 'caching.compressor';
+    private static $compressorInterface = '\Cable\Caching\Compressor\BootableCompressorInterface';
 
     /**
      * @var string
@@ -61,13 +57,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @var string
      */
-    private static $driverInterface = '\Cable\Components\Caching\DriveInterface';
-
-
-    /**
-     * @var string
-     */
-    private static $defaultCompressor = 'gz';
+    private static $driverInterface = '\Cable\Caching\DriveInterface';
 
 
     /**
@@ -81,7 +71,27 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
         $this->dispatchConfigs($configs);
 
+        $this->prepareCompressorForBoot();
         $this->addExpectations();
+
+    }
+
+    /**
+     *  adds compressor into container
+     */
+    private function prepareCompressorForBoot()
+    {
+        if (true === $this->compress) {
+            $this->container
+                ->addMethod(
+                    static::$compressorInterface,
+                    'boot'
+                )->withArgs(
+                    [
+                        'comfigs' => $this->configs,
+                    ]
+                );
+        }
     }
 
 
@@ -106,14 +116,14 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     private function addExpectations()
     {
         $this->container->expect(
-            static::$compressorContainer,
+            static::$compressorInterface,
             static::$compressorInterface
         );
 
     }
 
     /**
-     * @return BootableCompressorInterface
+     * @return CompressorInterface
      *
      * @throws \ReflectionException
      * @throws ResolverException
@@ -122,28 +132,10 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     public function getCompressor()
     {
-        $class = $this->container->resolve(
-            static::$compressorContainer
-        );
-
-        $this->container->method($class, 'boot');
-
-        return $class;
-    }
-
-
-    /**
-     * @param BootableCompressorInterface $compressor
-     * @return Cache
-     */
-    public function setCompressor($compressor)
-    {
-        $this->container->add(
-            static::$compressorContainer,
-            $compressor
-        );
-
-        return $this;
+        return $this->container
+            ->resolve(
+                static::$compressorInterface
+            );
     }
 
     /**
@@ -164,10 +156,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
         if (isset($configs['compress']['status'])) {
             $this->compress = $configs['compress']['status'];
-        }
-
-        if (isset($configs['compress']['default'])) {
-            static::$defaultCompressor = $configs['compress']['default'];
+            unset($configs['compress']['status']);
         }
 
 
@@ -202,6 +191,18 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     }
 
     /**
+     *
+     * @throws ExpectationException
+     * @throws NotFoundException
+     * @return CompressorInterface
+     */
+    public function resolveCompressor(){
+        return $this->container->resolve(static::$compressorInterface, array(
+            'configs' => $this->configs
+        ));
+    }
+
+    /**
      * @throws NotFoundException
      * @throws ExpectationException
      * @throws ResolverException
@@ -219,7 +220,13 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     public function get($name, $default = null)
     {
-        return $this->getDefautlDriver()->get($name, $default);
+        $value =  $this->getDefautlDriver()->get($name, $default);
+
+        if ($this->compress === true) {
+            return $this->resolveCompressor()->uncompress($value);
+        }
+
+        return $value;
     }
 
     /**
@@ -257,15 +264,22 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      * @param string $name
      * @param mixed $value
      * @param int $time
+     * @throws ExpectationException
+     * @throws ResolverException
+     * @throws NotFoundException
      * @return mixed
      */
     public function set($name, $value, $time)
     {
-         $driver = $this->getDefautlDriver();
+        $driver = $this->getDefautlDriver();
+
+        if (true === $this->compress) {
+            $value = $this->resolveCompressor()->compress($value);
+        }
 
         if ($driver instanceof TimeableDriverInterface) {
             $driver->set($name, $value, $time);
-        }else{
+        } else {
             $driver->set($name, $value);
         }
 
