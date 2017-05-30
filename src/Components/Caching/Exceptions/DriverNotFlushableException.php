@@ -2,6 +2,4 @@
 namespace Cable\Caching\Exceptions;
 use Exception;
 
-class DriverNotFlushableException extends Exception
-{
-}
+class DriverNotFlushableException extends Exception{}
