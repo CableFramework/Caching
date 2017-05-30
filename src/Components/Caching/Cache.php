@@ -46,7 +46,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @var string
      */
-    private static $compressorInterface = '\Cable\Caching\Compressor\BootableCompressorInterface';
+    private static $compressorInterface = '\Cable\Caching\Compressor\CompressorInterface';
+
 
     /**
      * @var string
@@ -56,7 +57,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @var string
      */
-    private static $driverInterface = '\Cable\Caching\DriveInterface';
+    private static $driverInterface = 'Cable\Caching\Driver\DriverInterface';
 
 
     /**
@@ -69,28 +70,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         $this->container = $container;
 
         $this->dispatchConfigs($configs);
-
-        $this->prepareCompressorForBoot();
         $this->addExpectations();
 
-    }
-
-    /**
-     *  adds compressor into container
-     */
-    private function prepareCompressorForBoot()
-    {
-        if (true === $this->compress) {
-            $this->container
-                ->addMethod(
-                    static::$compressorInterface,
-                    'boot'
-                )->withArgs(
-                    [
-                        'comfigs' => $this->configs,
-                    ]
-                );
-        }
     }
 
 
@@ -104,11 +85,15 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         $this->container->add(
             $name = $this->buildDriverName($driver),
             $callback
-        )
-            ->withMethod('boot')
+        );
+
+
+        $this->container->addMethod($name, 'boot')
             ->withArgs([
                 'configs' => $this->configs
             ]);
+
+
 
         $this->container->expect($name, static::$driverInterface);
 
@@ -177,11 +162,13 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     public function driver($name)
     {
         if (!isset($this->drivers[$name])) {
-            $driver  = $this
+
+            $driver = $this
                 ->container
                 ->resolve(
                     $alias = $this->buildDriverName($name)
                 );
+
 
             $this->container
                 ->method($alias, 'boot');
