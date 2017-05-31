@@ -61,6 +61,11 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
 
     /**
+     * @var string
+     */
+    private static $serializerInterface = 'Cable\Caching\Serializer\SerializerInterface';
+
+    /**
      * Cache constructor.
      * @param ContainerInterface $container
      * @param array $configs
@@ -86,28 +91,45 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
             $name = $this->buildDriverName($driver),
             $callback
         );
-
-
         $this->container->addMethod($name, 'boot')
             ->withArgs(array(
                 'configs' => $this->configs
             ));
-
-
         $this->container->expect($name, static::$driverInterface);
+        return $this;
+    }
 
+    /**
+     * @param string $alias
+     * @param mixed $callback
+     * @return $this
+     */
+    public function addSerializer($alias, $callback)
+    {
+        $this->container->add(
+            $name = $this->prepareSerializerName($alias),
+            $callback
+        )->withArgs(array(
+            'marks' => $alias
+        ));
+
+        $this->container->expect(
+            $name,
+            static::$serializerInterface
+        );
 
         return $this;
     }
 
-    private function addExpectations()
+    /**
+     * @param string $alias
+     * @return string
+     */
+    private function prepareSerializerName($alias)
     {
-        $this->container->expect(
-            static::$compressorInterface,
-            static::$compressorInterface
-        );
-
+        return 'caching.serailizer' . $alias;
     }
+
 
     /**
      * @return CompressorInterface
