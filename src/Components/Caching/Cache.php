@@ -125,7 +125,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         }
 
         if (!isset($configs['serialize']['default'])) {
-            $configs['compress']['default'] = 'json';
+            $configs['serialize']['default'] = 'json';
         }
 
         $this->configs = $configs;
@@ -284,6 +284,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @param $value
      * @throws CompressorException
+     * @throws ExpectationException
+     * @throws NotFoundException
      * @return string
      */
     private function compressIsEnabled($value)
@@ -291,7 +293,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         if (false === $this->compress) {
             return $value;
         }
-
 
         $minLength = isset($this->configs['compress']['min_length']) ?
             $this->configs['compress']['min_length'] :
@@ -303,11 +304,16 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
         list($compresor, $mark) = $this->getDefaultCompressor();
 
-        return $mark . $compresor->compress($value);
+
+        return $mark .
+            $this->resolveCompressor($compresor)
+                ->compress($value);
     }
 
     /**
      * @param $value
+     * @throws ExpectationException
+     * @throws NotFoundException
      * @return mixed
      */
     private function unSerialize($value)
@@ -330,6 +336,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
     /**
      * @param string $value
+     * @throws ExpectationException
+     * @throws NotFoundException
      * @return mixed
      */
     private function unCompress($value)
