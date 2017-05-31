@@ -4,6 +4,7 @@ namespace Cable\Caching;
 
 
 use Cable\Caching\Compressor\CompressorInterface;
+use Cable\Caching\Driver\BootableDriverInterface;
 use Cable\Caching\Driver\DriverInterface;
 use Cable\Caching\Driver\FlushableDriverInterface;
 use Cable\Caching\Driver\TimeableDriverInterface;
@@ -100,19 +101,19 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
     /**
      * @param array $configs
+     * @throws DriverException
      * @return void returns nothings
      */
     private function dispatchConfigs(array $configs)
     {
-        if (isset($configs['default'])) {
-            $this->driver = $configs['default'];
-            unset($configs['default']);
+        if (!isset($configs['default'])) {
+            throw new DriverException(
+                'you didnot give an driver name to default'
+            );
         }
 
-        if (isset($configs['drivers'])) {
-            $this->drivers = $configs['drivers'];
-            unset($configs['drivers']);
-        }
+        $this->driver = $configs['default'];
+        unset($configs['default']);
 
         if (isset($configs['compress']['status'])) {
             $this->compress = $configs['compress']['status'];
@@ -155,7 +156,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     }
 
 
-
     /**
      * @return DriverInterface
      * @throws ExpectationException
@@ -165,13 +165,30 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     private function resolveDriver()
     {
         if (is_string($this->driver)) {
-            $this->driver = $this->container
-                ->resolve($this->buildDriverName(
-                    $this->driver
-                ));
+
+            $this->driver = $this->buildDriver();
         }
 
         return $this->driver;
+    }
+
+    /**
+     *  builds selected driver
+     *
+     * @return mixed
+     */
+    private function buildDriver()
+    {
+        $driver = $this->container
+            ->resolve($this->buildDriverName(
+                $this->driver
+            ));
+
+        if ($driver instanceof BootableDriverInterface) {
+            $driver->boot($this->configs);
+        }
+
+        return $driver;
     }
 
     /**
@@ -252,9 +269,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
             $this->serializeIsNeeded($value)
         );
 
-        if (true === $this->compress) {
-            $value = $this->resolveCompressor()->compress($value);
-        }
 
         if ($driver instanceof TimeableDriverInterface) {
             $driver->set($name, $value, $time);
@@ -303,7 +317,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         $serializers = $this->serializerManager
             ->getSerializers();
 
-        foreach($serializers as list($name, $mark)){
+        foreach ($serializers as list($name, $mark)) {
 
             if (strpos($value, $mark) !== false) {
                 return $this->resolveSerializer($name)
@@ -311,6 +325,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
             }
         }
     }
+
     /**
      * @param string $value
      * @return mixed
@@ -323,7 +338,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
         $compressors = $this->compressorManager->getCompressors();
 
-        foreach($compressors as list($name, $mark)){
+        foreach ($compressors as list($name, $mark)) {
 
             if (strpos($value, $mark) !== false) {
                 return $this->resolveCompressor($name)
@@ -333,6 +348,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
         return $value;
     }
+
     /**
      * @param $value
      * @return string
@@ -364,7 +380,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      * @return array
      * @throws CompressorException
      */
-    private function getDefaultCompressor(){
+    private function getDefaultCompressor()
+    {
         $default = $this->configs['compress']['default'];
 
         if (!$this->compressorManager->has($default)) {
@@ -384,7 +401,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      * @return array
      * @throws SerializerException
      */
-    private function getDefaultSerializer(){
+    private function getDefaultSerializer()
+    {
         $default = $this->configs['serializer']['default'];
 
         if (!$this->serializerManager->has($default)) {
@@ -398,6 +416,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
         return $this->serializerManager->getSerializer($default);
     }
+
     /**
      * @param string $name
      * @throws ExpectationException
