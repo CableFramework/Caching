@@ -6,7 +6,7 @@ namespace Cable\Caching\Serializer;
 use Cable\Container\Resolver\ResolverException;
 use Cable\Container\ServiceProvider;
 
-class JsonSerializerProvider extends ServiceProvider
+class ArraySerializerProvider extends ServiceProvider
 {
 
     /**
@@ -28,8 +28,8 @@ class JsonSerializerProvider extends ServiceProvider
     public function register()
     {
         $this->getContainer()
-            ->add($alias = 'caching.serializer.json', function () {
-                return new JsonSerializer('json');
+            ->add($alias = 'caching.serializer.array', function () {
+                return new ArraySerializer('array');
             });
     }
 }

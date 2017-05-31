@@ -8,6 +8,8 @@ use Cable\Caching\Driver\DriverInterface;
 use Cable\Caching\Driver\FlushableDriverInterface;
 use Cable\Caching\Driver\TimeableDriverInterface;
 use Cable\Caching\Exceptions\DriverNotFlushableException;
+use Cable\Caching\Serializer\SerializerException;
+use Cable\Caching\Serializer\SerializerInterface;
 use Cable\Container\ContainerInterface;
 use Cable\Container\ExpectationException;
 use Cable\Container\NotFoundException;
@@ -31,11 +33,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @var array
      */
-    private $drivers = [];
-
-    /**
-     * @var array
-     */
     private $configs = [];
 
     /**
@@ -43,27 +40,22 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     protected $driver;
 
-    /**
-     * @var string
-     */
-    private static $compressorInterface = '\Cable\Caching\Compressor\CompressorInterface';
 
+    /**
+     * @var SerializerManager
+     */
+    private $serializerManager;
+
+    /**
+     * @var CompressorManager
+     */
+    private $compressorManager;
 
     /**
      * @var string
      */
     private static $driverContainer = 'caching.driver';
 
-    /**
-     * @var string
-     */
-    private static $driverInterface = 'Cable\Caching\Driver\DriverInterface';
-
-
-    /**
-     * @var string
-     */
-    private static $serializerInterface = 'Cable\Caching\Serializer\SerializerInterface';
 
     /**
      * Cache constructor.
@@ -75,8 +67,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         $this->container = $container;
 
         $this->dispatchConfigs($configs);
-        $this->addExpectations();
-
     }
 
 
@@ -95,57 +85,11 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
             ->withArgs(array(
                 'configs' => $this->configs
             ));
-        $this->container->expect($name, static::$driverInterface);
+
+        $this->container->expect($name, DriverInterface::class);
         return $this;
     }
 
-    /**
-     * @param string $alias
-     * @param mixed $callback
-     * @return $this
-     */
-    public function addSerializer($alias, $callback)
-    {
-        $this->container->add(
-            $name = $this->prepareSerializerName($alias),
-            $callback
-        )->withArgs(array(
-            'marks' => $alias
-        ));
-
-        $this->container->expect(
-            $name,
-            static::$serializerInterface
-        );
-
-        return $this;
-    }
-
-    /**
-     * @param string $alias
-     * @return string
-     */
-    private function prepareSerializerName($alias)
-    {
-        return 'caching.serailizer' . $alias;
-    }
-
-
-    /**
-     * @return CompressorInterface
-     *
-     * @throws \ReflectionException
-     * @throws ResolverException
-     * @throws NotFoundException
-     * @throws ExpectationException
-     */
-    public function getCompressor()
-    {
-        return $this->container
-            ->resolve(
-                static::$compressorInterface
-            );
-    }
 
     /**
      * @param array $configs
@@ -196,18 +140,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         return static::$driverContainer . '.' . $name;
     }
 
-    /**
-     *
-     * @throws ExpectationException
-     * @throws NotFoundException
-     * @return CompressorInterface
-     */
-    public function resolveCompressor()
-    {
-        return $this->container->resolve(static::$compressorInterface, array(
-            'configs' => $this->configs
-        ));
-    }
+
 
     /**
      * @return DriverInterface
@@ -240,9 +173,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     {
         $value = $this->resolveDriver()->get($name, $default);
 
-        if ($this->compress === true) {
-            return $this->resolveCompressor()->uncompress($value);
-        }
 
         return $value;
     }
@@ -291,11 +221,18 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      * @throws ExpectationException
      * @throws ResolverException
      * @throws NotFoundException
+     * @throws SerializerException
+     * @throws CompressorException
      * @return mixed
      */
     public function set($name, $value, $time)
     {
         $driver = $this->resolveDriver();
+
+
+        $value = $this->compressIsEnabled(
+            $this->serializeIsNeeded($value)
+        );
 
         if (true === $this->compress) {
             $value = $this->resolveCompressor()->compress($value);
@@ -308,5 +245,92 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         }
 
         return $this;
+    }
+
+    /**
+     * @param $value
+     * @throws CompressorException
+     * @return string
+     */
+    private function compressIsEnabled($value)
+    {
+        if (false === $this->compress) {
+            return $value;
+        }
+
+
+        $minLength = isset($this->configs['compress']['min_length']) ?
+            $this->configs['compress']['min_length'] :
+            1024;
+
+        if (strlen($value) < $minLength) {
+            return $value;
+        }
+
+        list($compresor, $mark) = $this->compressorManager->getFirstCompressor();
+
+        return $mark . $compresor->compress($value);
+    }
+
+    /**
+     * @param $value
+     * @return string
+     * @throws SerializerException
+     * @throws ExpectationException
+     * @throws NotFoundException
+     */
+    private function serializeIsNeeded($value)
+    {
+        if (!is_object($value) || !is_array($value)) {
+            return $value;
+        }
+
+        list($serializer, $mark) = $this->serializerManager->getFirstSerializer();
+
+
+        $serializer = $this->resolveSerializer($serializer);
+
+
+        /**
+         * @var SerializerInterface $serializer
+         */
+
+        return $mark . $serializer->serialize($value);
+
+    }
+
+    /**
+     * @param string $name
+     * @throws ExpectationException
+     * @throws NotFoundException
+     * @return SerializerInterface
+     */
+    private function resolveSerializer($name)
+    {
+
+        $this->container->expect(
+            $name = $this->serializerManager->prepareSerializerName($name),
+            SerializerInterface::class
+        );
+
+
+        return $this->container->resolve($name);
+    }
+
+    /**
+     *
+     * @throws ExpectationException
+     * @throws NotFoundException
+     * @return CompressorInterface
+     */
+    public function resolveCompressor($name)
+    {
+        $this->container->expect(
+            $name = $this->compressorManager->prepareCompressorName($name),
+            CompressorInterface::class
+        );
+
+
+        return $this->container->resolve($name);
     }
 }
