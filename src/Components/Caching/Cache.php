@@ -175,6 +175,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      *  builds selected driver
      *
+     * @throws ExpectationException
+     * @throws NotFoundException
      * @return mixed
      */
     private function buildDriver()
