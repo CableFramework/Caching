@@ -2,6 +2,7 @@
 namespace Cable\Caching;
 
 
+use Cable\Caching\Compressor\CompressorProvider;
 use Cable\Caching\Serializer\ArraySerializerProvider;
 use Cable\Caching\Serializer\JsonSerializerProvider;
 use Cable\Container\ProviderException;
@@ -20,7 +21,8 @@ class CachingProvider extends ServiceProvider
     {
         $this->getContainer()
             ->addProvider(ArraySerializerProvider::class)
-            ->addProvider(JsonSerializerProvider::class);
+            ->addProvider(JsonSerializerProvider::class)
+            ->addProvider(CompressorProvider::class);
     }
 
     /**

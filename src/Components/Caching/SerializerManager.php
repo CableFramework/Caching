@@ -21,16 +21,28 @@ class SerializerManager
     }
 
     /**
-     * @return mixed
+     * @param $name
+     * @return bool
      */
-    public function getFirstSerializer()
+    public function has($name)
     {
-
-        if (count(static::$serializers) === 0) {
-            throw new SerializerException('You did not add any serializer');
-        }
-
-        return static::$serializer[0];
+        return isset(static::$serializers[$name]);
+    }
+    /**
+     * @param string $name
+     * @return array
+     */
+    public function getSerializer($name)
+    {
+        return static::$serializers[$name];
+    }
+    /**
+     * @param string $name
+     * @return array
+     */
+    public function getSerializers()
+    {
+        return static::$serializers;
     }
 
     /**
@@ -39,7 +51,7 @@ class SerializerManager
      */
     public static function addSerializer($alias, $callback)
     {
-        static::$serializers[] = array($alias, '{{s.' . $callback . '}}');
+        static::$serializers[$alias] = array($alias, '{{s.' . $callback . '}}');
     }
 
 }

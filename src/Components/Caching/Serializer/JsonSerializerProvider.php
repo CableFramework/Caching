@@ -3,6 +3,7 @@
 namespace Cable\Caching\Serializer;
 
 
+use Cable\Caching\SerializerManager;
 use Cable\Container\Resolver\ResolverException;
 use Cable\Container\ServiceProvider;
 
@@ -28,8 +29,8 @@ class JsonSerializerProvider extends ServiceProvider
     public function register()
     {
         $this->getContainer()
-            ->add($alias = 'caching.serializer.json', function () {
-                return new JsonSerializer('json');
-            });
+            ->add($alias = 'caching.serializer.json', JsonSerializer::class);
+
+        SerializerManager::addSerializer('json', 'json');
     }
 }

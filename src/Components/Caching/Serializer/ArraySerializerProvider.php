@@ -3,6 +3,7 @@
 namespace Cable\Caching\Serializer;
 
 
+use Cable\Caching\SerializerManager;
 use Cable\Container\Resolver\ResolverException;
 use Cable\Container\ServiceProvider;
 
@@ -28,8 +29,8 @@ class ArraySerializerProvider extends ServiceProvider
     public function register()
     {
         $this->getContainer()
-            ->add($alias = 'caching.serializer.array', function () {
-                return new ArraySerializer('array');
-            });
+            ->add($alias = 'caching.serializer.array', ArraySerializer::class);
+
+        SerializerManager::addSerializer('array', 'array');
     }
 }

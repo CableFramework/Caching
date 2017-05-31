@@ -21,20 +21,6 @@ class CompressorManager
         return 'caching.compressor.' . $alias;
     }
 
-    /**
-     * @return array
-     * @throws CompressorException
-     */
-    public function getFirstCompressor(){
-        if (count(static::$compressors) === 0) {
-            throw new CompressorException(
-                'You did not added any compressor'
-            );
-        }
-
-        return static::$compressors[0];
-    }
-
 
     /**
      * @param string $alias
@@ -42,6 +28,43 @@ class CompressorManager
      */
     public static function addCompressor($alias, $callback)
     {
-        static::$compressors[] = array($alias, '{{c.' . $callback . '}}');
+        static::$compressors[$alias] = array($alias, '{{c.' . $callback . '}}');
     }
+
+    /**
+     * @return array[]
+     */
+    public function getCompressor($name)
+    {
+        return self::$compressors[$name];
+    }
+
+    /**
+     * @param $name
+     * @return bool
+     */
+    public function has($name)
+    {
+        return isset(static::$compressors[$name]);
+    }
+
+    /**
+     * @return array[]
+     */
+    public function getCompressors()
+    {
+        return self::$compressors;
+    }
+
+    /**
+     * @param \array[] $compressors
+     * @return  $this
+     */
+    public function setCompressors($compressors)
+    {
+        self::$compressors = $compressors;
+
+        return $this;
+    }
+
 }
