@@ -41,7 +41,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @var string
      */
-    protected $defaultDriver;
+    protected $driver;
 
     /**
      * @var string
@@ -89,10 +89,9 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
 
         $this->container->addMethod($name, 'boot')
-            ->withArgs([
+            ->withArgs(array(
                 'configs' => $this->configs
-            ]);
-
+            ));
 
 
         $this->container->expect($name, static::$driverInterface);
@@ -133,7 +132,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     private function dispatchConfigs(array $configs)
     {
         if (isset($configs['default'])) {
-            $this->defaultDriver = $configs['default'];
+            $this->driver = $configs['default'];
             unset($configs['default']);
         }
 
@@ -161,23 +160,9 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     public function driver($name)
     {
-        if (!isset($this->drivers[$name])) {
+        $this->driver = $name;
 
-            $driver = $this
-                ->container
-                ->resolve(
-                    $alias = $this->buildDriverName($name)
-                );
-
-
-            $this->container
-                ->method($alias, 'boot');
-
-            $this->drivers[$name] = $driver;
-
-        }
-
-        return $this->drivers[$name];
+        return $this;
     }
 
     /**
@@ -203,24 +188,35 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     }
 
     /**
-     * @throws NotFoundException
+     * @return DriverInterface
      * @throws ExpectationException
      * @throws ResolverException
-     * @return DriverInterface
+     * @throws NotFoundException
      */
-    private function getDefautlDriver()
+    private function resolveDriver()
     {
-        return $this->driver($this->defaultDriver);
+        if (is_string($this->driver)) {
+            $this->driver = $this->container
+                ->resolve($this->buildDriverName(
+                    $this->driver
+                ));
+        }
+
+        return $this->driver;
     }
 
     /**
+     *
+     * @throws ExpectationException
+     * @throws ResolverException
+     * @throws NotFoundException
      * @param $name
      * @param null $default
      * @return mixed
      */
     public function get($name, $default = null)
     {
-        $value = $this->getDefautlDriver()->get($name, $default);
+        $value = $this->resolveDriver()->get($name, $default);
 
         if ($this->compress === true) {
             return $this->resolveCompressor()->uncompress($value);
@@ -230,21 +226,27 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     }
 
     /**
+     * @throws ExpectationException
+     * @throws ResolverException
+     * @throws NotFoundException
      * @param string $name
      * @return mixed
      */
     public function delete($name)
     {
-        return $this->getDefautlDriver()->delete($name);
+        return $this->resolveDriver()->delete($name);
     }
 
     /**
      * @throws DriverNotFlushableException
+     * @throws ExpectationException
+     * @throws ResolverException
+     * @throws NotFoundException
      * @return $this
      */
     public function flush()
     {
-        $driver = $this->getDefautlDriver();
+        $driver = $this->resolveDriver();
 
         if (!$driver instanceof FlushableDriverInterface) {
             throw new DriverNotFlushableException(
@@ -271,7 +273,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     public function set($name, $value, $time)
     {
-        $driver = $this->getDefautlDriver();
+        $driver = $this->resolveDriver();
 
         if (true === $this->compress) {
             $value = $this->resolveCompressor()->compress($value);
