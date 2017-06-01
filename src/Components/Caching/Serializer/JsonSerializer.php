@@ -13,7 +13,7 @@ class JsonSerializer extends Serializer implements SerializerInterface
      */
     public function serialize($value)
     {
-
+        return json_encode($value);
     }
 
     /**
@@ -22,6 +22,6 @@ class JsonSerializer extends Serializer implements SerializerInterface
      */
     public function unserialize($value)
     {
-
+        return json_decode($value);
     }
 }

@@ -11,7 +11,7 @@ class ArraySerializer extends Serializer implements SerializerInterface
      */
     public function serialize($value)
     {
-
+        return serialize($value);
     }
 
     /**
@@ -20,5 +20,6 @@ class ArraySerializer extends Serializer implements SerializerInterface
      */
     public function unserialize($value)
     {
+        return $this->unserialize($value);
     }
 }
