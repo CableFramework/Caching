@@ -21,6 +21,6 @@
         "cable/cable-redis-driver": "1.0.*"
     },
     "require": {
-        "cable/cable-container": "^1.0"
+        "cable/cable-container": "^1.1"
     }
 }

@@ -14,7 +14,6 @@ use Cable\Caching\Serializer\SerializerInterface;
 use Cable\Container\ContainerInterface;
 use Cable\Container\ExpectationException;
 use Cable\Container\NotFoundException;
-use Cable\Container\Resolver\ResolverException;
 
 class Cache implements FlushableDriverInterface, TimeableDriverInterface, DriverInterface
 {
@@ -74,7 +73,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         $this->container = $container;
         $this->serializerManager = $serializerManager;
         $this->compressorManager = $compressorManager;
-        $this->dispatchConfigs($configs);
+        $this->setConfigs($configs);
     }
 
 
@@ -101,19 +100,16 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
     /**
      * @param array $configs
-     * @throws DriverException
      * @return void returns nothings
      */
     private function dispatchConfigs(array $configs)
     {
-        if (!isset($configs['default'])) {
-            throw new DriverException(
-                'you didnot give an driver name to default'
-            );
+        if (isset($configs['default'])) {
+            $this->driver = $configs['default'];
+            unset($configs['default']);
         }
 
-        $this->driver = $configs['default'];
-        unset($configs['default']);
+
 
         if (isset($configs['compress']['status'])) {
             $this->compress = $configs['compress']['status'];
@@ -133,7 +129,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
     /**
      * @param string $name
-     * @throws ResolverException
      * @throws NotFoundException
      * @throws ExpectationException
      * @throws \ReflectionException
@@ -159,11 +154,18 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
     /**
      * @return DriverInterface
      * @throws ExpectationException
+     * @throws DriverException
      * @throws ResolverException
      * @throws NotFoundException
      */
     private function resolveDriver()
     {
+        if (null === $this->driver) {
+            throw new DriverException(
+                ' you didnt select a driver o didnot added a default one'
+            );
+        }
+
         if (is_string($this->driver)) {
 
             $this->driver = $this->buildDriver();
@@ -488,7 +490,8 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     public function setConfigs(array $configs)
     {
-        $this->configs = $configs;
+        $this->dispatchConfigs($configs);
+
         return $this;
     }
 }
