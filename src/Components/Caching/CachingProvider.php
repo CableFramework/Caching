@@ -1,4 +1,5 @@
 <?php
+
 namespace Cable\Caching;
 
 
@@ -32,6 +33,10 @@ class CachingProvider extends ServiceProvider
      */
     public function register()
     {
-      
+        $app = $this->getContainer();
+        $this->getContainer()->add('caching', function () use ($app) {
+
+            return Caching::create($app);
+        });
     }
 }

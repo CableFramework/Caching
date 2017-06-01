@@ -262,7 +262,7 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      * @throws CompressorException
      * @return mixed
      */
-    public function set($name, $value, $time)
+    public function set($name, $value, $time = 160)
     {
         $driver = $this->resolveDriver();
 
@@ -472,5 +472,23 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         }
 
         return $driver;
+    }
+
+    /**
+     * @return array
+     */
+    public function getConfigs()
+    {
+        return $this->configs;
+    }
+
+    /**
+     * @param array $configs
+     * @return Cache
+     */
+    public function setConfigs(array $configs)
+    {
+        $this->configs = $configs;
+        return $this;
     }
 }
