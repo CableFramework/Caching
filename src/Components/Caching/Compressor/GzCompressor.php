@@ -6,7 +6,7 @@ namespace Cable\Caching\Compressor;
  * Class GzCompressor
  * @package Cable\Caching\Compressor
  */
-class GzCompressor implements BootableCompressorInterface
+class GzCompressor implements BootableCompressorInterface, CompressorInterface
 {
 
     /**
@@ -38,7 +38,7 @@ class GzCompressor implements BootableCompressorInterface
      */
     public function compress($data)
     {
-        return gzencode($data, $this->compressLevel);
+        return gzcompress($data, $this->compressLevel);
     }
 
     /**
@@ -47,6 +47,6 @@ class GzCompressor implements BootableCompressorInterface
      */
     public function uncompress($data)
     {
-        return gzdecode($data);
+        return gzuncompress($data);
     }
 }

@@ -329,7 +329,9 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
 
             if (strpos($value, $mark) !== false) {
                 return $this->resolveSerializer($name)
-                    ->unserialize($value);
+                    ->unserialize(
+                        str_replace($mark, '', $value)
+                    );
             }
         }
     }
@@ -351,8 +353,11 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         foreach ($compressors as list($name, $mark)) {
 
             if (strpos($value, $mark) !== false) {
+
                 return $this->resolveCompressor($name)
-                    ->uncompress($value);
+                    ->uncompress(
+                        str_replace($mark, '', $value)
+                    );
             }
         }
 
@@ -368,9 +373,11 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     private function serializeIsNeeded($value)
     {
+
         if (!is_object($value) || !is_array($value)) {
             return $value;
         }
+
 
         list($serializer, $mark) = $this->getDefaultSerializer();
 
@@ -458,12 +465,12 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
             CompressorInterface::class
         );
 
-        $this->container->getArgumentManager()
-            ->setClassArgs($name, array(
-                'configs' => $this->configs
-            ));
+        $driver = $this->container->resolve($name);
 
+        if ($driver instanceof BootableDriverInterface) {
+            $driver->boot($this->configs);
+        }
 
-        return $this->container->resolve($name);
+        return $driver;
     }
 }
