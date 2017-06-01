@@ -15,7 +15,12 @@
       }
     },
     "minimum-stability": "stable",
+
+    "require-dev": {
+        "cable/cable-caching-memcache": "1.0.*",
+        "cable/cable-redis-driver": "1.0.*"
+    },
     "require": {
-        "cable/cable-container": "1.0.8"
+        "cable/cable-container": "^1.0"
     }
 }
