@@ -4,7 +4,6 @@ namespace Cable\Caching\Serializer;
 
 
 use Cable\Caching\SerializerManager;
-use Cable\Container\Resolver\ResolverException;
 use Cable\Container\ServiceProvider;
 
 class ArraySerializerProvider extends ServiceProvider
