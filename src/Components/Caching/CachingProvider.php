@@ -23,7 +23,8 @@ class CachingProvider extends ServiceProvider
         $this->getContainer()
             ->addProvider(ArraySerializerProvider::class)
             ->addProvider(JsonSerializerProvider::class)
-            ->addProvider(CompressorProvider::class);
+            ->addProvider(CompressorProvider::class)
+            ->addProvider(ArrayCacheDriver::class);
     }
 
     /**

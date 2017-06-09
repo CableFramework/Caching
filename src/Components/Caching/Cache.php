@@ -110,7 +110,6 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         }
 
 
-
         if (isset($configs['compress']['status'])) {
             $this->compress = $configs['compress']['status'];
             unset($configs['compress']['status']);
@@ -206,12 +205,15 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
      */
     public function get($name, $default = null)
     {
-        $value = $this->resolveDriver()->get($name, $default);
+        $driver = $this->resolveDriver();
+        $value = $driver->get($name, $default);
 
 
-        $value = $this->unSerialize(
-            $this->unCompress($value)
-        );
+        if (!$driver instanceof ArrayCacheDriver) {
+            $value = $this->unSerialize(
+                $this->unCompress($value)
+            );
+        }
 
         return $value;
     }
@@ -269,9 +271,12 @@ class Cache implements FlushableDriverInterface, TimeableDriverInterface, Driver
         $driver = $this->resolveDriver();
 
 
-        $value = $this->compressIsEnabled(
-            $this->serializeIsNeeded($value)
-        );
+        // array cache does not support compress or serializing
+        if (!$driver instanceof ArrayCacheDriver) {
+            $value = $this->compressIsEnabled(
+                $this->serializeIsNeeded($value)
+            );
+        }
 
 
         if ($driver instanceof TimeableDriverInterface) {
